@@ -62,7 +62,12 @@ end
 function Vector2d:stringify()
 	return "<"..self.x..","..self.y..">"
 end
-
+function Vector2d:explode()
+	return unpack(self)
+end
+function Vector2d:copy()
+	return Vector2d(self.x, self.y)
+end
 --IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII--
 
 function whichIsWhich(operand1, operand2)
@@ -71,6 +76,8 @@ function whichIsWhich(operand1, operand2)
 	type2 = (getmetatable(operand2)==Vector2d) and "vec" or nil
 	type1 = (type(operand1) == "number") and "scalar" or type1
 	type2 = (type(operand2) == "number") and "scalar" or type2
+	type1 = (type(operand1) == "string") and "string" or type1
+	type2 = (type(operand2) == "string") and "string" or type2
 
 	return type1, type2
 end
@@ -82,6 +89,18 @@ function Vector2d.opHandler(op, operand1, operand2)
 	local type1, type2 = whichIsWhich(operand1,operand2)
 	if type1 == nil or type2 == nil then
 		return assert(nil, "expected two arguments")
+	end
+	if op == "concat" then
+		if type1 == type2 then
+			operand1:dot(operand2)
+		end
+		if type1 == "vec" then
+			return operand1:stringify()..operand2
+		end
+		return operand1..operand2:stringify()
+	end
+	if type1 == "string" or type2 == "string" then
+		return assert(nil, "unexpected string")
 	end
 	if op == "add" then
 		if type1 == type2 then
@@ -119,14 +138,8 @@ function Vector2d.opHandler(op, operand1, operand2)
 		return assert(nil, "ain't nobody got time for that")
 	elseif op == "pow" then
 		return assert(nil, "ain't nobody got time for that")
-	elseif op == "concat" then
-		if type1 == type2 then
-			operand1:dot(operand2)
-		end
-		if type1 == "vec" then
-			return operand1:stringify()..operand2
-		end
-		return operand2:stringify()..operand1
+	elseif op == "eq" then
+		return (type1 == type2 and operand1.x == operand2.x and operand1.y == operand2.y)
 	end
 end
 function Vector2d.unm(...)
@@ -153,6 +166,9 @@ end
 function Vector2d.concat(...)
 	return Vector2d.opHandler("concat", ...)
 end
+function Vector2d.eq(...)
+	return Vector2d.opHandler("eq", ...)
+end
 Vector2d.__unm = Vector2d.unm
 Vector2d.__add = Vector2d.add
 Vector2d.__sub = Vector2d.sub
@@ -160,6 +176,7 @@ Vector2d.__mul = Vector2d.mul
 Vector2d.__div = Vector2d.div
 Vector2d.__mod = Vector2d.mod
 Vector2d.__pow = Vector2d.pow
-Vector2d.__concat =Vector2d.concat
+Vector2d.__concat = Vector2d.concat
+Vector2d.__eq = Vector2d.eq
 
 return Vector2d
